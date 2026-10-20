@@ -1,0 +1,10 @@
+{
+  "name": "investimentos-calc",
+  "private": true,
+  "type": "module",
+  "description": "Calculadora de renda fixa (site estático). Node é usado só para os testes.",
+  "scripts": {
+    "test": "node --test tests/*.test.js",
+    "start": "python3 -m http.server 8000"
+  }
+}
