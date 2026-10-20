@@ -8,16 +8,16 @@ HTML + CSS + JavaScript puro (ES Modules). Sem build, sem backend, sem dependên
 
 ## Executar localmente
 
-ES Modules não carregam via `file://`; use qualquer servidor estático:
+ES Modules não carregam via `file://`. O repositório traz um servidor estático mínimo em Node (sem dependências):
 
 ```bash
-python3 -m http.server 8000      # ou: npx serve .
+npm start            # = node server.js  (porta: PORT=3000 npm start)
 # abra http://localhost:8000
 ```
 
 ## Testes
 
-Requer Node.js 18+ (usado só para os testes; o app continua estático):
+Requer Node.js 20.11+ (usado só para servidor local e testes; o app continua estático):
 
 ```bash
 npm test          # = node --test tests/*.test.js
@@ -48,6 +48,7 @@ js/rates-api.js       consulta às séries do BCB
 js/storage.js         localStorage e link de compartilhamento
 js/charts.js          gráfico SVG com tooltip
 js/formatters.js      Intl.NumberFormat (R$, %), datas
+server.js             servidor estático local (Node, só desenvolvimento)
 tests/                testes (node:test)
 ```
 
