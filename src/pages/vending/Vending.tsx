@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { usePersistedState } from "../../usePersistedState";
 import { brl } from "../../format";
 import { LineChart } from "../../components/LineChart";
 import { NumberFields, NumberInput } from "../../components/NumberFields";
@@ -23,6 +23,7 @@ const defaults: VendingInput & { daysOpen: number } = {
   sellPrice: 15,
   units: 720,
   taxPct: 4,
+  cardFeePct: 0,
   mallSharePct: 10,
   rent: 3500,
   accounting: 300,
@@ -48,8 +49,8 @@ const addMonths = (months: number) => {
 };
 
 export const Vending = () => {
-  const [input, setInput] = useState(defaults);
-  const [scenarios, setScenarios] = useState(defaultScenarios);
+  const [input, setInput] = usePersistedState("vending.input", defaults);
+  const [scenarios, setScenarios] = usePersistedState("vending.scenarios", defaultScenarios);
   const r = calculate(input);
   const fields = { value: input, onChange: setInput };
   const profit = r.net >= 0;
@@ -64,6 +65,7 @@ export const Vending = () => {
     ["− Mercadoria", -input.buyPrice, -r.cost],
     ["= Lucro bruto", per(r.grossProfit), r.grossProfit, true],
     ["− Imposto", -per(r.tax), -r.tax],
+    ["− Taxa de cartão", -per(r.cardFee), -r.cardFee],
     ["− Shopping", -per(r.mallShare), -r.mallShare],
     ["= Contribuição", r.unitMargin, r.unitMargin * input.units, true],
     ["− Custos fixos (rateio)", -per(r.fixedCosts), -r.fixedCosts],
@@ -102,7 +104,21 @@ export const Vending = () => {
 
   return (
     <main className="layout">
-      <h1>Calculadora Vending Machine</h1>
+      <div className="card-head">
+        <h1>Calculadora Vending Machine</h1>
+        <button
+          type="button"
+          className="btn btn-ghost"
+          onClick={() => {
+            if (!confirm("Voltar todos os campos e cenários para os valores padrão?")) return;
+            setInput(defaults);
+            setScenarios(defaultScenarios);
+          }}
+        >
+          Restaurar padrão
+        </button>
+      </div>
+      <p className="muted small">Os valores ficam salvos neste navegador.</p>
       <div className="inputs">
         <Section title="💰 Investimento">
           <NumberFields
@@ -127,6 +143,7 @@ export const Vending = () => {
             {...fields}
             fields={[
               { key: "taxPct", label: "Imposto", unit: "% do faturamento" },
+              { key: "cardFeePct", label: "Taxa de cartão", unit: "% do faturamento" },
               { key: "mallSharePct", label: "Shopping", unit: "% do lucro bruto" },
             ]}
           />
@@ -339,6 +356,7 @@ export const Vending = () => {
           segments={[
             { label: "Mercadoria", value: r.cost, color: "#2a78d6" },
             { label: "Imposto", value: r.tax, color: "#eb6834" },
+            { label: "Taxa de cartão", value: r.cardFee, color: "#00a3b4" },
             { label: "Shopping", value: r.mallShare, color: "#1baf7a" },
             { label: "Aluguel", value: input.rent, color: "#eda100" },
             { label: "Contabilidade", value: input.accounting, color: "#e87ba4" },

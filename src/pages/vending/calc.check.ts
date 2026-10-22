@@ -6,6 +6,7 @@ const base = {
   sellPrice: 15,
   units: 720,
   taxPct: 0,
+  cardFeePct: 0,
   mallSharePct: 10,
   rent: 3500,
   accounting: 300,
@@ -50,3 +51,11 @@ assert.ok(Math.abs(m.safetyMargin - (720 - 4050 / 5.7) / 720) < 1e-12);
 // Selling at the minimum price must give zero profit.
 assert.ok(Math.abs(calculate({ ...base, taxPct: 4, sellPrice: m.minSellPrice }).net) < 1e-9);
 console.log("ok metrics");
+
+// Card fee behaves like tax: both on revenue.
+const card = calculate({ ...base, taxPct: 2, cardFeePct: 2 });
+assert.equal(card.cardFee, 216);
+assert.equal(card.net, taxed.net);
+assert.ok(Math.abs(card.unitMargin - taxed.unitMargin) < 1e-9);
+assert.ok(Math.abs(calculate({ ...base, taxPct: 2, cardFeePct: 2, sellPrice: card.metrics.minSellPrice }).net) < 1e-9);
+console.log("ok card fee");
