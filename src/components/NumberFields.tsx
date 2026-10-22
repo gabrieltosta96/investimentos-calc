@@ -14,13 +14,15 @@ const parse = (s: string) => {
 };
 
 // Free text while focused (can clear, type commas); formatted pt-BR when not.
-const NumberInput = ({ value, onChange }: { value: number; onChange: (n: number) => void }) => {
+export const NumberInput = ({ value, onChange, label, className }: { value: number; onChange: (n: number) => void; label?: string; className?: string }) => {
   const [draft, setDraft] = useState<string | null>(null);
   return (
     <input
       type="text"
       inputMode="decimal"
+      className={className}
       placeholder="0"
+      aria-label={label}
       value={draft ?? display(value)}
       onFocus={(e) => {
         setDraft(display(value));

@@ -24,7 +24,7 @@ function valueAt(points, t) {
   return found;
 }
 
-export function renderLineChart(container, series, { height = 300 } = {}) {
+export function renderLineChart(container, series, { height = 300, label = 'Evolução estimada do patrimônio por estratégia. Os valores estão na tabela por etapa.' } = {}) {
   const width = Math.max(320, container.clientWidth || 640);
   const m = { top: 16, right: 16, bottom: 32, left: 64 };
   const all = series.flatMap((s) => s.points.map((p) => ({ ...p, t: Date.parse(p.date) })));
@@ -61,7 +61,7 @@ export function renderLineChart(container, series, { height = 300 } = {}) {
   container.innerHTML = `
     <div class="chart-wrap" style="position:relative">
       <svg xmlns="${SVG_NS}" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}" role="img"
-        aria-label="Evolução estimada do patrimônio por estratégia. Os valores estão na tabela por etapa.">
+        aria-label="${esc(label)}">
         ${grid}${xAxis}
         <line x1="${m.left}" x2="${m.left}" y1="${m.top}" y2="${height - m.bottom}" class="chart-hair" visibility="hidden"/>
         ${lines}${markers}

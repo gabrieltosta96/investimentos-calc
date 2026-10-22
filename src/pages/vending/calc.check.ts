@@ -40,3 +40,13 @@ assert.equal(loss.mallShare, 0);
 assert.equal(loss.net, 5 * 720 - 8 * 720 - 4050);
 assert.equal(loss.breakEvenUnits, Infinity);
 console.log("ok loss");
+
+const withInvestment = calculate({ ...base, taxPct: 4, initialInvestment: 10800 });
+const m = withInvestment.metrics;
+assert.equal(m.markup, 7 / 8);
+assert.equal(m.netMargin, 54 / 10800);
+assert.equal(m.annualRoi, (54 * 12) / 10800);
+assert.ok(Math.abs(m.safetyMargin - (720 - 4050 / 5.7) / 720) < 1e-12);
+// Selling at the minimum price must give zero profit.
+assert.ok(Math.abs(calculate({ ...base, taxPct: 4, sellPrice: m.minSellPrice }).net) < 1e-9);
+console.log("ok metrics");

@@ -1,8 +1,8 @@
 // Interface da calculadora de renda fixa. Toda a regra de negócio fica em ./lib (JS puro, com testes).
 
 import { useEffect, useRef, useState } from "react";
+import { LineChart } from "../../components/LineChart";
 import { addTerm, businessDaysBetween, calendarDaysBetween, parseISO } from "./lib/calendar.js";
-import { renderLineChart } from "./lib/charts.js";
 import { MAX_TERM, compare, timeline } from "./lib/comparison.js";
 import { INDEXERS, annualize } from "./lib/financial-math.js";
 import { brl, date as fmtDate, dateTime, number, pct, signedBrl, signedPct } from "./lib/formatters.js";
@@ -174,25 +174,6 @@ function download(name: string, content: string, type: string) {
 }
 
 // ---------- componentes ----------
-const Chart = ({ series }: { series: Parameters<typeof renderLineChart>[1] }) => {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const draw = () => ref.current && renderLineChart(ref.current, series);
-    draw();
-    let timer: number | undefined;
-    const onResize = () => {
-      clearTimeout(timer);
-      timer = window.setTimeout(draw, 150);
-    };
-    window.addEventListener("resize", onResize);
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener("resize", onResize);
-    };
-  }, [series]);
-  return <div ref={ref} className="chart" />;
-};
-
 const Kpi = ({ label, value, sub, tone = "" }: { label: string; value: string; sub?: string; tone?: string }) => (
   <div className={`kpi ${tone}`}>
     <div className="kpi-label">{label}</div>
@@ -953,7 +934,7 @@ export const Investimentos = () => {
                           Vencimento / reinvestimento (degrau = impostos)
                         </li>
                       </ul>
-                      <Chart
+                      <LineChart
                         series={[
                           { name: "Investimento + reinvest.", color: COLORS.strategy, points: timeline(C.strategy.apps, model) },
                           { name: refLabel, color: COLORS.reference, dashed: true, points: timeline(C.reference.apps, model) },

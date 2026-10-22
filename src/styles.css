@@ -223,6 +223,7 @@ a.kpi { text-decoration: none; color: inherit; }
 .kpi-value { display: block; }
 .topbar nav { justify-content: flex-start; }
 .num-rows { display: grid; gap: 8px; }
+.cell-input { width: 90px; min-height: 32px; padding: 4px 8px; text-align: right; font: inherit; border: 1px solid #c9cec6; border-radius: 8px; }
 .num-row { display: grid; grid-template-columns: minmax(0, 1fr) 110px; align-items: center; gap: 12px; font-size: .9rem; color: var(--text-2); }
 .num-row input {
   font: inherit; color: var(--text); width: 100%; min-height: 36px; padding: 6px 10px; text-align: right;
