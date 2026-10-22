@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { irRate, iofRate, computeRedemptionTaxes, isIrExempt, minTermWarning } from '../js/tax-rules.js';
-import { simulateApplication } from '../js/financial-math.js';
+import { irRate, iofRate, computeRedemptionTaxes, isIrExempt, minTermWarning } from '../../src/pages/investimentos/lib/tax-rules.js';
+import { simulateApplication } from '../../src/pages/investimentos/lib/financial-math.js';
 
 const premises = { cdi: 0.1365, selic: 0.1365, ipca: 0.045 };
 

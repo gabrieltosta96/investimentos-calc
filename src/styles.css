@@ -205,3 +205,20 @@ dialog::backdrop { background: rgb(16 24 20 / 40%); }
   .columns { grid-template-columns: 1fr; }
   .how { display: block; }
 }
+
+/* Utilidades (shell + componentes compartilhados) */
+a.kpi { text-decoration: none; color: inherit; }
+.topbar a.btn { text-decoration: none; }
+.hero { font-size: 1.1rem; }
+.hero strong { display: block; font-size: 2.4rem; }
+.bar { display: flex; gap: 2px; height: 32px; }
+.bar div { min-width: 2px; }
+.bar div:first-child { border-radius: 4px 0 0 4px; }
+.bar div:last-child { border-radius: 0 4px 4px 0; }
+.bar-legend { list-style: none; padding: 0; display: grid; grid-template-columns: auto 1fr auto auto; gap: 4px 12px; font-size: .9rem; }
+.bar-legend li { display: contents; }
+.bar-legend span:nth-child(3), .bar-legend span:nth-child(4) { text-align: right; }
+.bar-swatch { width: 12px; height: 12px; border-radius: 2px; align-self: center; }
+.inputs { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.kpi-value { display: block; }
+.topbar nav { justify-content: flex-start; }

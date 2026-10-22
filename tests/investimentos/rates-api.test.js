@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { fetchRates, fetchSeriesLatest } from '../js/rates-api.js';
+import { fetchRates, fetchSeriesLatest } from '../../src/pages/investimentos/lib/rates-api.js';
 
 const now = new Date('2026-10-20T15:00:00Z');
 const okFetch = (byCode) => async (url) => {

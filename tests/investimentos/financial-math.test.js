@@ -1,8 +1,8 @@
 // Valores de referência derivados à mão ou de dados publicados pelo BCB (documentados em cada teste).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { businessDaysBetween, easterSunday, nationalHolidays, addMonths, addTerm } from '../js/calendar.js';
-import { dailyIndexRate, grossFactor, simulateApplication, annualize } from '../js/financial-math.js';
+import { businessDaysBetween, easterSunday, nationalHolidays, addMonths, addTerm } from '../../src/pages/investimentos/lib/calendar.js';
+import { dailyIndexRate, grossFactor, simulateApplication, annualize } from '../../src/pages/investimentos/lib/financial-math.js';
 
 const premises = { cdi: 0.1365, selic: 0.1365, ipca: 0.045 };
 const close = (a, b, tol = 0.005) => assert.ok(Math.abs(a - b) <= tol, `${a} != ${b}`);

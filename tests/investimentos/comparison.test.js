@@ -2,9 +2,9 @@
 // (fator diário DI na 8ª casa, centavos no resgate, IOF → IR), sem usar simulateApplication.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { compare, runStrategy } from '../js/comparison.js';
-import { businessDaysBetween, calendarDaysBetween } from '../js/calendar.js';
-import { irRate } from '../js/tax-rules.js';
+import { compare, runStrategy } from '../../src/pages/investimentos/lib/comparison.js';
+import { businessDaysBetween, calendarDaysBetween } from '../../src/pages/investimentos/lib/calendar.js';
+import { irRate } from '../../src/pages/investimentos/lib/tax-rules.js';
 
 const r2 = (x) => Math.round((x + Number.EPSILON) * 100) / 100;
 const TD = Math.round(((1.1365) ** (1 / 252) - 1) * 1e8) / 1e8;
