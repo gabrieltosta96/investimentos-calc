@@ -6,6 +6,15 @@ import { Section } from "../../components/Section";
 import { StackedBar } from "../../components/StackedBar";
 import { calculate, type VendingInput } from "./calc";
 
+const dayValue = (value: number, days: number) => (days > 0 ? value / days : 0);
+
+const paybackText = (months: number, investment: number) => {
+  if (investment <= 0) return "—";
+  if (!Number.isFinite(months)) return "nunca";
+  const m = Math.ceil(months);
+  return m < 12 ? `${m} meses` : `${m} meses (${(m / 12).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} anos)`;
+};
+
 const perDay = (units: number, days: number) =>
   (days > 0 ? units / days : 0).toLocaleString("pt-BR", { maximumFractionDigits: 1 });
 
@@ -18,6 +27,7 @@ const defaults: VendingInput & { daysOpen: number } = {
   rent: 3500,
   accounting: 300,
   otherCosts: 250,
+  initialInvestment: 0,
   daysOpen: 30,
 };
 
@@ -26,6 +36,8 @@ export const Vending = () => {
   const r = calculate(input);
   const fields = { value: input, onChange: setInput };
   const profit = r.net >= 0;
+  // Whole packages: what you actually have to sell to break even.
+  const breakEvenUnits = Math.ceil(r.breakEvenUnits);
 
   return (
     <main className="layout">
@@ -51,6 +63,13 @@ export const Vending = () => {
             ]}
           />
         </Section>
+        <Section title="💰 Investimento">
+          <NumberFields
+            {...fields}
+            fields={[{ key: "initialInvestment", label: "Investimento inicial (R$)" }]}
+          />
+          <p className="muted small">Máquina, instalação, estoque inicial, etc.</p>
+        </Section>
         <Section title="🏠 Custos fixos/mês">
           <NumberFields
             {...fields}
@@ -68,6 +87,13 @@ export const Vending = () => {
           {profit ? "✅ Lucro" : "⚠️ Prejuízo"} <strong>{brl(r.net)}</strong>
         </div>
         <div className="kpis">
+          <div className={`kpi ${Number.isFinite(r.paybackMonths) ? "" : "neg"}`}>
+            <div className="kpi-label">Retorno do investimento</div>
+            <strong className="kpi-value">{paybackText(r.paybackMonths, input.initialInvestment)}</strong>
+            <div className="kpi-sub">
+              {input.initialInvestment > 0 ? `para recuperar ${brl(input.initialInvestment)}` : "informe o investimento inicial"}
+            </div>
+          </div>
           <div className="kpi">
             <div className="kpi-label">Margem de lucro</div>
             <strong className="kpi-value">
@@ -86,17 +112,25 @@ export const Vending = () => {
             <div className="kpi-label">Empata com</div>
             <strong className="kpi-value">
               {Number.isFinite(r.breakEvenUnits)
-                ? `${Math.ceil(r.breakEvenUnits)} pct/mês`
+                ? `${breakEvenUnits} pct/mês`
                 : "nunca"}
             </strong>
             {Number.isFinite(r.breakEvenUnits) && (
-              <div className="kpi-sub">{perDay(r.breakEvenUnits, input.daysOpen)} pct/dia</div>
+              <>
+                <div className="kpi-sub">{perDay(breakEvenUnits, input.daysOpen)} pct/dia</div>
+                <div className="kpi-sub">
+                  Venda bruta {brl(breakEvenUnits * input.sellPrice)}/mês · {brl(dayValue(breakEvenUnits * input.sellPrice, input.daysOpen))}/dia
+                </div>
+              </>
             )}
           </div>
           <div className="kpi">
             <div className="kpi-label">Vende hoje</div>
             <strong className="kpi-value">{input.units} pct/mês</strong>
             <div className="kpi-sub">{perDay(input.units, input.daysOpen)} pct/dia</div>
+            <div className="kpi-sub">
+              Venda bruta {brl(r.revenue)}/mês · {brl(dayValue(r.revenue, input.daysOpen))}/dia
+            </div>
           </div>
         </div>
       </Section>

@@ -19,7 +19,7 @@ export const NumberFields = <T extends Record<string, number>>({
           step="any"
           inputMode="decimal"
           value={value[key]}
-          onChange={(e) => onChange({ ...value, [key]: e.target.valueAsNumber || 0 })}
+          onChange={(e) => onChange({ ...value, [key]: Math.max(0, e.target.valueAsNumber || 0) })}
         />
       </label>
     ))}
