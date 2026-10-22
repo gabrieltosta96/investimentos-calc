@@ -6,7 +6,8 @@ import { Section } from "../../components/Section";
 import { StackedBar } from "../../components/StackedBar";
 import { calculate, type VendingInput } from "./calc";
 
-const dayValue = (value: number, days: number) => (days > 0 ? value / days : 0);
+const perDay = (value: number, days: number) => (days > 0 ? value / days : 0);
+const fmt = (n: number) => n.toLocaleString("pt-BR", { maximumFractionDigits: 1 });
 
 const paybackText = (months: number, investment: number) => {
   if (investment <= 0) return "—";
@@ -15,8 +16,6 @@ const paybackText = (months: number, investment: number) => {
   return m < 12 ? `${m} meses` : `${m} meses (${(m / 12).toLocaleString("pt-BR", { maximumFractionDigits: 1 })} anos)`;
 };
 
-const perDay = (units: number, days: number) =>
-  (days > 0 ? units / days : 0).toLocaleString("pt-BR", { maximumFractionDigits: 1 });
 
 const defaults: VendingInput & { daysOpen: number } = {
   buyPrice: 8,
@@ -38,19 +37,27 @@ export const Vending = () => {
   const profit = r.net >= 0;
   // Whole packages: what you actually have to sell to break even.
   const breakEvenUnits = Math.ceil(r.breakEvenUnits);
+  const slack = input.units - breakEvenUnits;
 
   return (
     <main className="layout">
       <h1>Calculadora Vending Machine</h1>
       <div className="inputs">
-        <Section title="📦 Produto">
+        <Section title="💰 Investimento">
+          <NumberFields
+            {...fields}
+            fields={[{ key: "initialInvestment", label: "Investimento inicial", unit: "R$" }]}
+          />
+          <p className="muted small note">Máquina, instalação, estoque inicial, etc.</p>
+        </Section>
+        <Section title="📦 Produto e vendas">
           <NumberFields
             {...fields}
             fields={[
-              { key: "buyPrice", label: "Compra (R$/pct)" },
-              { key: "sellPrice", label: "Venda (R$/pct)" },
-              { key: "units", label: "Pacotes/mês" },
-              { key: "daysOpen", label: "Dias abertos/mês" },
+              { key: "buyPrice", label: "Compra", unit: "R$/pct" },
+              { key: "sellPrice", label: "Venda", unit: "R$/pct" },
+              { key: "units", label: "Vendas", unit: "pct/mês" },
+              { key: "daysOpen", label: "Dias abertos", unit: "dias/mês" },
             ]}
           />
         </Section>
@@ -58,81 +65,88 @@ export const Vending = () => {
           <NumberFields
             {...fields}
             fields={[
-              { key: "taxPct", label: "Imposto (% faturamento)" },
-              { key: "mallSharePct", label: "Shopping (% lucro bruto)" },
+              { key: "taxPct", label: "Imposto", unit: "% do faturamento" },
+              { key: "mallSharePct", label: "Shopping", unit: "% do lucro bruto" },
             ]}
           />
         </Section>
-        <Section title="💰 Investimento">
-          <NumberFields
-            {...fields}
-            fields={[{ key: "initialInvestment", label: "Investimento inicial (R$)" }]}
-          />
-          <p className="muted small">Máquina, instalação, estoque inicial, etc.</p>
-        </Section>
-        <Section title="🏠 Custos fixos/mês">
+        <Section title="🏠 Custos fixos">
           <NumberFields
             {...fields}
             fields={[
-              { key: "rent", label: "Aluguel" },
-              { key: "accounting", label: "Contabilidade" },
-              { key: "otherCosts", label: "Combustível, etc" },
+              { key: "rent", label: "Aluguel", unit: "R$/mês" },
+              { key: "accounting", label: "Contabilidade", unit: "R$/mês" },
+              { key: "otherCosts", label: "Combustível, etc", unit: "R$/mês" },
             ]}
           />
         </Section>
       </div>
 
       <Section title="Resultado do mês">
-        <div className={`hero ${profit ? "pos" : "neg"}`}>
-          {profit ? "✅ Lucro" : "⚠️ Prejuízo"} <strong>{brl(r.net)}</strong>
-        </div>
         <div className="kpis">
+          <div className={`kpi highlight ${profit ? "pos" : "neg"}`}>
+            <div className="kpi-label">{profit ? "✅ Lucro líquido" : "⚠️ Prejuízo"}</div>
+            <div className="kpi-value">{brl(r.net)}</div>
+            <div className="kpi-sub">margem de {fmt(r.revenue > 0 ? (r.net / r.revenue) * 100 : 0)}% do faturamento</div>
+          </div>
           <div className={`kpi ${Number.isFinite(r.paybackMonths) ? "" : "neg"}`}>
             <div className="kpi-label">Retorno do investimento</div>
-            <strong className="kpi-value">{paybackText(r.paybackMonths, input.initialInvestment)}</strong>
+            <div className="kpi-value">{paybackText(r.paybackMonths, input.initialInvestment)}</div>
             <div className="kpi-sub">
               {input.initialInvestment > 0 ? `para recuperar ${brl(input.initialInvestment)}` : "informe o investimento inicial"}
             </div>
           </div>
           <div className="kpi">
-            <div className="kpi-label">Margem de lucro</div>
-            <strong className="kpi-value">
-              {(r.revenue > 0 ? (r.net / r.revenue) * 100 : 0).toLocaleString("pt-BR", {
-                maximumFractionDigits: 1,
-              })}
-              %
-            </strong>
-            <div className="kpi-sub">do faturamento</div>
-          </div>
-          <div className="kpi">
             <div className="kpi-label">Sobra por pacote</div>
-            <strong className="kpi-value">{brl(r.unitMargin)}</strong>
+            <div className="kpi-value">{brl(r.unitMargin)}</div>
+            <div className="kpi-sub">depois de mercadoria, imposto e shopping</div>
           </div>
-          <div className="kpi">
-            <div className="kpi-label">Empata com</div>
-            <strong className="kpi-value">
-              {Number.isFinite(r.breakEvenUnits)
-                ? `${breakEvenUnits} pct/mês`
-                : "nunca"}
-            </strong>
-            {Number.isFinite(r.breakEvenUnits) && (
-              <>
-                <div className="kpi-sub">{perDay(breakEvenUnits, input.daysOpen)} pct/dia</div>
-                <div className="kpi-sub">
-                  Venda bruta {brl(breakEvenUnits * input.sellPrice)}/mês · {brl(dayValue(breakEvenUnits * input.sellPrice, input.daysOpen))}/dia
-                </div>
-              </>
-            )}
-          </div>
-          <div className="kpi">
-            <div className="kpi-label">Vende hoje</div>
-            <strong className="kpi-value">{input.units} pct/mês</strong>
-            <div className="kpi-sub">{perDay(input.units, input.daysOpen)} pct/dia</div>
-            <div className="kpi-sub">
-              Venda bruta {brl(r.revenue)}/mês · {brl(dayValue(r.revenue, input.daysOpen))}/dia
-            </div>
+          <div className={`kpi ${slack >= 0 ? "" : "neg"}`}>
+            <div className="kpi-label">Folga sobre o empate</div>
+            <div className="kpi-value">{Number.isFinite(slack) ? `${slack} pct/mês` : "—"}</div>
+            <div className="kpi-sub">{Number.isFinite(slack) ? `${fmt(perDay(slack, input.daysOpen))} pct/dia` : "nunca empata"}</div>
           </div>
         </div>
+      </Section>
+
+      <Section title="Meta de vendas">
+        {Number.isFinite(r.breakEvenUnits) ? (
+          <div className="table-wrap">
+            <table className="data">
+              <thead>
+                <tr>
+                  <th scope="col"></th>
+                  <th scope="col">Para empatar (lucro zero)</th>
+                  <th scope="col">Hoje</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">Pacotes/mês</th>
+                  <td>{breakEvenUnits}</td>
+                  <td>{input.units}</td>
+                </tr>
+                <tr>
+                  <th scope="row">Pacotes/dia</th>
+                  <td>{fmt(perDay(breakEvenUnits, input.daysOpen))}</td>
+                  <td>{fmt(perDay(input.units, input.daysOpen))}</td>
+                </tr>
+                <tr>
+                  <th scope="row">Venda bruta/mês</th>
+                  <td>{brl(breakEvenUnits * input.sellPrice)}</td>
+                  <td>{brl(r.revenue)}</td>
+                </tr>
+                <tr>
+                  <th scope="row">Venda bruta/dia</th>
+                  <td>{brl(perDay(breakEvenUnits * input.sellPrice, input.daysOpen))}</td>
+                  <td>{brl(perDay(r.revenue, input.daysOpen))}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <p className="alert alert-warn">Cada pacote vendido dá prejuízo: não existe volume que empate. Revise preço de compra/venda.</p>
+        )}
       </Section>
 
       <Section title="Para onde vai o faturamento">
