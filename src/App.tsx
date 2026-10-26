@@ -4,10 +4,12 @@ import "./styles.css";
 import { useEffect, useState } from "react";
 import { Investimentos } from "./pages/investimentos/Investimentos";
 import { Vending } from "./pages/vending/Vending";
+import { Vantagem } from "./pages/vantagem/Vantagem";
 
 // New utility = new entry here.
 const pages = [
   { path: "vending", title: "Calculadora Vending Machine", Component: Vending },
+  { path: "vantagem", title: "Qual vale mais a pena?", Component: Vantagem },
   { path: "investimentos", title: "Calculadora de Renda Fixa", Component: Investimentos },
 ];
 

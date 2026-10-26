@@ -233,3 +233,15 @@ a.kpi { text-decoration: none; color: inherit; }
 .num-row .unit { display: block; font-size: .78rem; }
 .kpi.highlight { border-color: currentColor; }
 .kpi.pos.highlight { background: var(--ok-bg); }
+
+/* Vantagem: phone-first, big touch targets; 16px inputs stop iOS zooming on focus. */
+.vantagem { max-width: 560px; }
+.vantagem > .btn { min-height: 48px; font-size: 1rem; }
+.option.best { border-color: var(--pos); background: var(--ok-bg); }
+.option .card-head h2 { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.option-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.option-fields label { display: grid; gap: 4px; font-size: .85rem; font-weight: 600; color: var(--text-2); }
+.option-fields input {
+  font: inherit; font-size: 1.25rem; color: var(--text); width: 100%; min-height: 52px; padding: 8px 12px;
+  border: 1px solid #c9cec6; border-radius: 10px; background: var(--surface);
+}
