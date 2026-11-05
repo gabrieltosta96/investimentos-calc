@@ -15,10 +15,11 @@ test('data final mês/ano encadeia etapas no dia do início', () => {
   assert.deepEqual(toModel(s).stages.map((x) => x.termValue), [6, 12]);
 });
 
-test('prefixado é rentabilidade total no período', () => {
-  const r = compare(toModel(base([{ product: 'CDB', indexer: 'PRE', rate: 15, endMonth: '2027-07' }])));
+test('prefixado é taxa ao ano (base 252)', () => {
+  const r = compare(toModel(base([{ product: 'CDB', indexer: 'PRE', rate: 13, endMonth: '2027-01' }])));
   assert.deepEqual(r.errors, []);
-  assert.ok(Math.abs(r.A.gross - 11500) <= 0.01, `bruto ${r.A.gross}`);
+  const expected = 10000 * 1.13 ** (businessDaysBetween('2026-01-15', '2027-01-15') / 252);
+  assert.ok(Math.abs(r.A.gross - expected) < 0.01, `bruto ${r.A.gross} vs ${expected}`);
 });
 
 test('data final não posterior ao início vira erro', () => {
@@ -39,7 +40,7 @@ test('data final em texto livre não quebra (navegador sem input month)', () => 
   assert.ok(compare(toModel(s)).errors.length);
 });
 
-test('prefixado antigo (% a.a.) migra para % total', () => {
+test('prefixado salvo no formato antigo mantém a taxa ao ano', () => {
   const s = base([{ product: 'CDB', indexer: 'PRE', rate: 13, termValue: 1, termUnit: 'years' }]);
   const r = compare(toModel(s));
   const expected = 10000 * 1.13 ** (businessDaysBetween('2026-01-15', '2027-01-15') / 252); // mesmo bruto do modelo antigo

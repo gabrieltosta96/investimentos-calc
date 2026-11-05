@@ -65,7 +65,7 @@ function setPath(obj: any, path: string, value: unknown) {
 const RATE_LABEL: Record<string, string> = {
   CDI: "Percentual do CDI (%)",
   SELIC: "Percentual da Selic (%)",
-  PRE: "Rentabilidade total no período (%)",
+  PRE: "Taxa prefixada (% a.a.)",
   IPCA: "Taxa acima do IPCA (% a.a.)",
 };
 function rateText(indexer: string, rate: number) {
@@ -75,7 +75,6 @@ function rateText(indexer: string, rate: number) {
   if (indexer === "PRE") return `${pct(rate)} a.a. (pré)`;
   return `IPCA + ${pct(rate)} a.a.`;
 }
-const stageRateText = (s: Stage) => (s.indexer === "PRE" ? `${pct(s.rate / 100)} no período (pré)` : rateText(s.indexer, s.rate / 100));
 const termText = (s: Stage) => `até ${s.endMonth.split("-").reverse().join("/")}`;
 const productLabel = (a: AppResult) => (a.isFill ? "CDB (reinvest.)" : PRODUCTS[a.product as keyof typeof PRODUCTS].label);
 const taxLine = (a: AppResult) => (a.exempt ? "Isento" : pct(a.irRate, 1));
@@ -127,7 +126,7 @@ function summaryText(state: State, r: AppResult) {
     `${state.name}${state.institution ? ` (${state.institution})` : ""}`,
     `Aplicação: ${brl(state.amount)} em ${fmtDate(state.startDate)}`,
     ...state.stages.map(
-      (s, i) => `Etapa ${i + 1}: ${PRODUCTS[s.product as keyof typeof PRODUCTS].label} ${stageRateText(s)} ${termText(s)}`,
+      (s, i) => `Etapa ${i + 1}: ${PRODUCTS[s.product as keyof typeof PRODUCTS].label} ${rateText(s.indexer, s.rate / 100)} ${termText(s)}`,
     ),
     `Premissas: CDI ${number(p.cdi, 2)}% a.a.${Number.isFinite(p.selic) ? `, Selic ${number(p.selic, 2)}% a.a.` : ""}, constantes (projeção, não garantia).`,
     "",

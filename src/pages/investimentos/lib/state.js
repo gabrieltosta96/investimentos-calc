@@ -1,7 +1,7 @@
 // Estado da interface (valores como o usuário digita: percentuais em "%"), saneamento de dados
 // vindos de localStorage/URL e conversão para o modelo de cálculo (decimais).
 
-import { addMonths, addTerm, businessDaysBetween, parseISO } from './calendar.js';
+import { addMonths, addTerm, parseISO } from './calendar.js';
 import { INDEXERS } from './financial-math.js';
 import { PRODUCTS } from './tax-rules.js';
 import { todayInBrazil } from './rates-api.js';
@@ -10,7 +10,6 @@ import { MAX_TERM } from './comparison.js';
 export const MAX_STAGES = 8;
 
 // Cada etapa termina no mês/ano informado (endMonth 'YYYY-MM'), no mesmo dia do início da etapa.
-// Prefixado: rate é a rentabilidade TOTAL no período (%), não ao ano.
 export const monthOf = (iso) => iso.slice(0, 7);
 export const isMonth = (v) => typeof v === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/.test(v);
 const monthIndex = (ym) => Number(ym.slice(0, 4)) * 12 + Number(ym.slice(5, 7)) - 1;
@@ -59,22 +58,15 @@ const oneOf = (v, options, fallback) => (options.includes(v) ? v : fallback);
 function sanitizeStage(raw, cursor) {
   const d = defaultStage();
   if (!raw || typeof raw !== 'object') return d;
-  const indexer = oneOf(raw.indexer, Object.keys(INDEXERS), d.indexer);
-  let rate = num(raw.rate, d.rate);
   let endMonth = cursor ? monthOf(addMonths(cursor, 12)) : d.endMonth;
   if (isMonth(raw.endMonth)) endMonth = raw.endMonth;
   else if (cursor && Number.isInteger(raw.termValue) && raw.termValue > 0 && ['days', 'months', 'years'].includes(raw.termUnit)) {
-    try {
-      endMonth = monthOf(addTerm(cursor, raw.termValue, raw.termUnit));
-      // Formato antigo: prefixado era % a.a.; converte para % total no novo período.
-      const dates = stageDates(cursor, [{ endMonth }])[0];
-      if (indexer === 'PRE' && dates?.end) rate = ((1 + rate / 100) ** (businessDaysBetween(dates.start, dates.end) / 252) - 1) * 100;
-    } catch { /* prazo absurdo: usa padrão */ }
+    try { endMonth = monthOf(addTerm(cursor, raw.termValue, raw.termUnit)); } catch { /* prazo absurdo: usa padrão */ }
   }
   return {
     product: oneOf(raw.product, Object.keys(PRODUCTS), d.product),
-    indexer,
-    rate,
+    indexer: oneOf(raw.indexer, Object.keys(INDEXERS), d.indexer),
+    rate: num(raw.rate, d.rate),
     endMonth,
     cost: num(raw.cost, 0),
   };
@@ -123,11 +115,7 @@ export function toModel(state) {
     liquidity: state.liquidity,
     stages: stageDates(state.startDate, state.stages).map((dates, i) => {
       const { endMonth, ...s } = state.stages[i];
-      const months = dates?.months ?? 0;
-      let rate = pct(s.rate);
-      // Prefixado total no período → taxa ao ano equivalente (base 252), que é o que o cálculo usa.
-      if (s.indexer === 'PRE' && dates?.end) rate = (1 + rate) ** (252 / businessDaysBetween(dates.start, dates.end)) - 1;
-      return { ...s, rate, termValue: months, termUnit: 'months' };
+      return { ...s, rate: pct(s.rate), termValue: dates?.months ?? 0, termUnit: 'months' };
     }),
     premises: {
       cdi: pct(state.premises.cdi),
