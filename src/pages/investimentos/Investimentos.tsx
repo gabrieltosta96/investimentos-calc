@@ -9,7 +9,7 @@ import { brl, date as fmtDate, dateTime, number, pct, signedBrl, signedPct } fro
 import { SERIES, SOURCE, fetchRates } from "./lib/rates-api.js";
 import { MAX_STAGES, defaultStage, defaultState, isMonth, monthOf, sanitizeState, stageDates, toModel } from "./lib/state.js";
 import * as storage from "./lib/storage.js";
-import { IR_BRACKETS, PRODUCTS, TAX_RULES_VERIFIED_AT } from "./lib/tax-rules.js";
+import { IR_BRACKETS, PRODUCTS, TAX_RULES_VERIFIED_AT, isIrExempt } from "./lib/tax-rules.js";
 
 type Stage = ReturnType<typeof defaultStage>;
 type State = Omit<ReturnType<typeof sanitizeState>, "stages"> & { stages: Stage[] };
@@ -752,14 +752,10 @@ export const Investimentos = () => {
                         Data final (mês/ano)
                         <input type="month" {...text(path("endMonth"))} required />
                       </label>
-                      <label className="field">
-                        Tributação (IR)
-                        <select {...text(path("taxMode"))}>
-                          <option value="auto">Regra do produto (pessoa física)</option>
-                          <option value="taxable">Tabela regressiva</option>
-                          <option value="exempt">Isento (confirme o enquadramento)</option>
-                        </select>
-                      </label>
+                      <div className="field">
+                        Tributação (IR, pessoa física)
+                        <strong>{!product.supported ? "—" : isIrExempt(s.product) ? "Isento" : "Tabela regressiva"}</strong>
+                      </div>
                       <label className="field">
                         Custos conhecidos (R$)
                         <input {...num(path("cost"))} min="0" step="0.01" inputMode="decimal" />

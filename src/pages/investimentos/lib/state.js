@@ -16,7 +16,7 @@ export const isMonth = (v) => typeof v === 'string' && /^\d{4}-(0[1-9]|1[0-2])$/
 const monthIndex = (ym) => Number(ym.slice(0, 4)) * 12 + Number(ym.slice(5, 7)) - 1;
 
 export const defaultStage = (endMonth = monthOf(addMonths(todayInBrazil(), 12))) => ({
-  product: 'CDB', indexer: 'CDI', rate: 100, endMonth, taxMode: 'auto', cost: 0,
+  product: 'CDB', indexer: 'CDI', rate: 100, endMonth, cost: 0,
 });
 
 // Datas de cada etapa encadeadas a partir de startDate (mesma regra de runStrategy).
@@ -76,7 +76,6 @@ function sanitizeStage(raw, cursor) {
     indexer,
     rate,
     endMonth,
-    taxMode: oneOf(raw.taxMode, ['auto', 'taxable', 'exempt'], d.taxMode),
     cost: num(raw.cost, 0),
   };
 }

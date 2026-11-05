@@ -17,7 +17,7 @@ function manualCdb(principal, pct, start, end) {
   return { gross, ir, net: r2(gross - ir) };
 }
 
-const stage = (over) => ({ product: 'CDB', indexer: 'CDI', rate: 1, termValue: 24, termUnit: 'months', taxMode: 'auto', cost: 0, ...over });
+const stage = (over) => ({ product: 'CDB', indexer: 'CDI', rate: 1, termValue: 24, termUnit: 'months', cost: 0, ...over });
 const model = (stages, over = {}) => ({ principal: 50000, startDate: '2026-11-05', liquidity: 'maturity', stages, premises, ...over });
 
 test('1. CDB 100% CDI x referência 100% CDI: diferença zero', () => {

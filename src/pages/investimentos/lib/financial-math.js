@@ -83,7 +83,7 @@ export function simulateApplication(app, premises) {
   const businessDays = businessDaysBetween(app.startDate, app.endDate);
   const factor = grossFactor(app, premises, businessDays);
   const gross = round2(app.principal * factor);
-  const exempt = isIrExempt(app.product, app.taxMode);
+  const exempt = isIrExempt(app.product);
   const taxes = computeRedemptionTaxes({ principal: app.principal, gross, calendarDays, exempt });
   const cost = app.cost || 0;
   const net = round2(gross - taxes.iof - taxes.ir - cost);

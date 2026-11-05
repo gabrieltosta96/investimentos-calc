@@ -16,7 +16,7 @@ test('data final mês/ano encadeia etapas no dia do início', () => {
 });
 
 test('prefixado é rentabilidade total no período', () => {
-  const r = compare(toModel(base([{ product: 'CDB', indexer: 'PRE', rate: 15, endMonth: '2027-07', taxMode: 'exempt' }])));
+  const r = compare(toModel(base([{ product: 'CDB', indexer: 'PRE', rate: 15, endMonth: '2027-07' }])));
   assert.deepEqual(r.errors, []);
   assert.ok(Math.abs(r.A.gross - 11500) <= 0.01, `bruto ${r.A.gross}`);
 });

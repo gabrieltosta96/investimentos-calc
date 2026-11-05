@@ -70,11 +70,8 @@ export const PRODUCTS = {
   },
 };
 
-// taxMode: 'auto' (regra do produto para pessoa física), 'taxable' (forçar tabela regressiva),
-// 'exempt' (forçar isenção — use apenas se tiver certeza do enquadramento).
-export function isIrExempt(productKey, taxMode = 'auto') {
-  if (taxMode === 'taxable') return false;
-  if (taxMode === 'exempt') return true;
+// Regra do produto para pessoa física (CDB/RDB: tabela regressiva; LCI/LCA: isento).
+export function isIrExempt(productKey) {
   return Boolean(PRODUCTS[productKey]?.irExemptPF);
 }
 

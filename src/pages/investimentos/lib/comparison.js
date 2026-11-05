@@ -8,7 +8,7 @@ import { PRODUCTS, minTermWarning } from './tax-rules.js';
 // Limite de 50 anos por etapa: evita datas fora do intervalo do Date.
 export const MAX_TERM = { days: 18262, months: 600, years: 50 };
 
-export const referenceStage = (rate) => ({ product: 'CDB', indexer: 'CDI', rate, taxMode: 'auto', cost: 0 });
+export const referenceStage = (rate) => ({ product: 'CDB', indexer: 'CDI', rate, cost: 0 });
 
 function stageWarnings(app) {
   const out = [];

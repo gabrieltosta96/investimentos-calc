@@ -49,7 +49,6 @@ test('LCI/LCA isentas de IR para PF; modo tributável força a tabela', () => {
   assert.equal(isIrExempt('LCI'), true);
   assert.equal(isIrExempt('LCA'), true);
   assert.equal(isIrExempt('CDB'), false);
-  assert.equal(isIrExempt('LCA', 'taxable'), false);
   const lca = simulateApplication({
     product: 'LCA', indexer: 'CDI', rate: 0.92, principal: 50000, startDate: '2026-11-03', endDate: '2027-11-03',
   }, premises);
