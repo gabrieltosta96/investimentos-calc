@@ -4,7 +4,7 @@ import { LineChart } from "../../components/LineChart";
 import { NumberFields, NumberInput } from "../../components/NumberFields";
 import { Section } from "../../components/Section";
 import { StackedBar } from "../../components/StackedBar";
-import { calculate, type VendingInput } from "./calc";
+import { PAYBACK_HORIZON, calculate, cashFlow, payback, type VendingInput } from "./calc";
 
 const perDay = (value: number, days: number) => (days > 0 ? value / days : 0);
 const pctText = (fraction: number) => `${(fraction * 100).toLocaleString("pt-BR", { maximumFractionDigits: 1 })}%`;
@@ -18,7 +18,7 @@ const paybackText = (months: number, investment: number) => {
 };
 
 
-const defaults: VendingInput & { daysOpen: number } = {
+const defaults: VendingInput & { daysOpen: number; rampStartPct: number; rampMonths: number } = {
   buyPrice: 8,
   sellPrice: 15,
   units: 720,
@@ -30,6 +30,8 @@ const defaults: VendingInput & { daysOpen: number } = {
   otherCosts: 250,
   initialInvestment: 0,
   daysOpen: 30,
+  rampStartPct: 100,
+  rampMonths: 1,
 };
 
 // Hypothetical foot traffic × conversion. "Realista" matches the default 24 pct/dia.
@@ -52,6 +54,14 @@ export const Vending = () => {
   const [input, setInput] = usePersistedState("vending.input", defaults);
   const [scenarios, setScenarios] = usePersistedState("vending.scenarios", defaultScenarios);
   const r = calculate(input);
+  // Every payback on the page uses the month-by-month cash, so they all count ramp-up and working capital.
+  const flowFor = (units: number) => cashFlow({ ...input, units }, PAYBACK_HORIZON, input.rampStartPct, input.rampMonths);
+  const longFlow = flowFor(input.units);
+  const flow = longFlow.slice(0, PROJECTION_MONTHS);
+  const paybackMonths = payback(longFlow);
+  // ROI over everything put in (investment + working-capital injections), at steady sales.
+  const putIn = longFlow[longFlow.length - 1].injected;
+  const annualRoi = putIn > 0 ? (r.net * 12) / putIn : 0;
   const fields = { value: input, onChange: setInput };
   const profit = r.net >= 0;
   // Whole packages: what you actually have to sell to break even.
@@ -76,11 +86,15 @@ export const Vending = () => {
     const perDayUnits = (sc.people * sc.conversionPct) / 100;
     const units = Math.round(perDayUnits * input.daysOpen);
     const res = calculate({ ...input, units });
+    const scenarioFlow = flowFor(units);
     return {
       ...sc,
       perDayUnits,
       units,
       ...res,
+      paybackMonths: payback(scenarioFlow),
+      // Month 0 = after the investment; then cash in hand minus everything put in.
+      cash: [-input.initialInvestment, ...scenarioFlow.slice(0, PROJECTION_MONTHS).map((f) => f.end - f.injected)],
       // Conversion needed to break even with this traffic.
       breakEvenConversion: sc.people > 0 && input.daysOpen > 0 ? res.breakEvenUnits / input.daysOpen / sc.people : Infinity,
     };
@@ -90,16 +104,17 @@ export const Vending = () => {
   const cashSeries = projections.map((p, i) => ({
     name: p.name,
     color: SCENARIO_COLORS[i],
-    points: Array.from({ length: PROJECTION_MONTHS + 1 }, (_, month) => ({
-      date: addMonths(month),
-      value: month * p.net - input.initialInvestment,
-    })),
+    points: p.cash.map((value, month) => ({ date: addMonths(month), value })),
   }));
+
+  const lastInjection = flow.findLast((f) => f.injection > 0);
+  // Still injecting in the last projected month = money keeps going in.
+  const injectionsStop = !lastInjection || lastInjection.month < PROJECTION_MONTHS;
 
   // Same inputs, different sales volume.
   const volumeChanges = [-0.2, -0.1, 0, 0.1, 0.2].map((change) => {
     const units = Math.round(input.units * (1 + change));
-    return { change, units, ...calculate({ ...input, units }) };
+    return { change, units, ...calculate({ ...input, units }), paybackMonths: change === 0 ? paybackMonths : payback(flowFor(units)) };
   });
 
   return (
@@ -125,7 +140,7 @@ export const Vending = () => {
             {...fields}
             fields={[{ key: "initialInvestment", label: "Investimento inicial", unit: "R$" }]}
           />
-          <p className="muted small note">Máquina, instalação, estoque inicial, etc.</p>
+          <p className="muted small note">Máquina, instalação, etc. O estoque de cada mês entra no "Caixa mês a mês".</p>
         </Section>
         <Section title="📦 Produto e vendas">
           <NumberFields
@@ -169,11 +184,11 @@ export const Vending = () => {
               margem de {pctText(m.netMargin)} · {brl(r.net * 12)}/ano
             </div>
           </div>
-          <div className={`kpi ${Number.isFinite(r.paybackMonths) ? "" : "neg"}`}>
+          <div className={`kpi ${Number.isFinite(paybackMonths) ? "" : "neg"}`}>
             <div className="kpi-label">Retorno do investimento</div>
-            <div className="kpi-value">{paybackText(r.paybackMonths, input.initialInvestment)}</div>
+            <div className="kpi-value">{paybackText(paybackMonths, input.initialInvestment)}</div>
             <div className="kpi-sub">
-              {input.initialInvestment > 0 ? `ROI de ${pctText(m.annualRoi)} ao ano` : "informe o investimento inicial"}
+              {input.initialInvestment > 0 ? `ROI de ${pctText(annualRoi)} ao ano sobre ${brl(putIn)} colocados` : "informe o investimento inicial"}
             </div>
           </div>
           <div className={`kpi ${m.safetyMargin < 0.1 ? "neg" : ""}`}>
@@ -186,6 +201,69 @@ export const Vending = () => {
             <div className="kpi-value">{pctText(m.markup)}</div>
             <div className="kpi-sub">preço de venda acima do custo</div>
           </div>
+        </div>
+      </Section>
+
+      <Section title="Caixa mês a mês">
+        <p className="muted small">
+          Por mês, o estoque e os custos fixos são pagos no começo e as vendas entram até o fim (já sem imposto, taxa e shopping).
+          Quando o caixa não cobre o começo do mês, entra um aporte. O investimento inicial é gasto antes do mês 1.
+        </p>
+        <NumberFields
+          {...fields}
+          fields={[
+            { key: "rampStartPct", label: "Vendas no 1º mês", unit: "% das vendas normais" },
+            { key: "rampMonths", label: "Vendas normais a partir do", unit: "mês" },
+          ]}
+        />
+        {input.rampStartPct !== 100 && input.rampMonths <= 1 && (
+          <p className="muted small">Informe a partir de qual mês as vendas ficam normais para usar o % do 1º mês.</p>
+        )}
+        <div className="kpis">
+          <div className={`kpi highlight ${injectionsStop ? "pos" : "neg"}`}>
+            <div className="kpi-label">Aportes param</div>
+            <div className="kpi-value">
+              {!lastInjection ? "sem aportes" : injectionsStop ? `após o mês ${lastInjection.month}` : `não param em ${PROJECTION_MONTHS} meses`}
+            </div>
+            <div className="kpi-sub">depois disso o próprio caixa paga estoque e custos</div>
+          </div>
+          <div className="kpi">
+            <div className="kpi-label">Dinheiro colocado</div>
+            <div className="kpi-value">{brl(flow[flow.length - 1].injected)}</div>
+            <div className="kpi-sub">
+              {brl(input.initialInvestment)} de investimento + {brl(flow[flow.length - 1].injected - input.initialInvestment)} de aportes
+            </div>
+          </div>
+        </div>
+        <div className="table-wrap">
+          <table className="data">
+            <thead>
+              <tr>
+                <th scope="col">Mês</th>
+                <th scope="col">Pacotes</th>
+                <th scope="col">Caixa no início</th>
+                <th scope="col">Estoque + fixos</th>
+                <th scope="col">Aporte</th>
+                <th scope="col">Lucro</th>
+                <th scope="col">Caixa no fim</th>
+                <th scope="col">Caixa − colocado</th>
+              </tr>
+            </thead>
+            <tbody>
+              {flow.map((f) => (
+                <tr key={f.month}>
+                  <th scope="row">{f.month}</th>
+                  <td>{fmt(f.units)}</td>
+                  <td>{brl(f.start)}</td>
+                  <td>{brl(f.upfront)}</td>
+                  <td className={f.injection > 0 ? "neg" : undefined}>{f.injection > 0 ? <strong>{brl(f.injection)}</strong> : "—"}</td>
+                  <td className={f.net < 0 ? "neg" : "pos"}>{brl(f.net)}</td>
+                  <td>{brl(f.end)}</td>
+                  <td className={f.end < f.injected ? "neg" : "pos"}>{brl(f.end - f.injected)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </Section>
 
@@ -336,14 +414,14 @@ export const Vending = () => {
         <h3>Caixa acumulado em {PROJECTION_MONTHS} meses</h3>
         <p className="muted small">
           {input.initialInvestment > 0
-            ? `Começa em −${brl(input.initialInvestment)} (investimento) e soma o lucro de cada mês. Onde a linha cruza zero, o investimento voltou.`
-            : "Soma o lucro de cada mês. Informe o investimento inicial para ver quando ele volta."}
+            ? `Começa em −${brl(input.initialInvestment)} (investimento), desconta os aportes e soma o lucro de cada mês (como em "Caixa mês a mês"). Onde a linha cruza zero, o dinheiro voltou.`
+            : 'Caixa menos aportes, mês a mês (como em "Caixa mês a mês"). Informe o investimento inicial para ver quando ele volta.'}
         </p>
         <ul className="legend">
           {projections.map((p, i) => (
             <li key={p.name}>
               <span className="swatch" style={{ background: SCENARIO_COLORS[i] }} />
-              {p.name}: {brl(p.net * PROJECTION_MONTHS - input.initialInvestment)} em {PROJECTION_MONTHS} meses
+              {p.name}: {brl(p.cash[PROJECTION_MONTHS])} em {PROJECTION_MONTHS} meses
             </li>
           ))}
         </ul>
