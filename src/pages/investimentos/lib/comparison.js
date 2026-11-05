@@ -118,7 +118,7 @@ export function compare(model) {
     if (!PRODUCTS[s.product]?.supported) {
       errors.push(`Etapa ${i + 1} (${PRODUCTS[s.product]?.label ?? s.product}): ${PRODUCTS[s.product]?.reason ?? 'produto desconhecido.'}`);
     }
-    if (!Number.isInteger(s.termValue) || s.termValue <= 0) errors.push(`Etapa ${i + 1}: prazo deve ser um inteiro positivo.`);
+    if (!Number.isInteger(s.termValue) || s.termValue <= 0) errors.push(`Etapa ${i + 1}: data final deve ser posterior ao início da etapa (até 50 anos).`);
     else if (s.termValue > MAX_TERM[s.termUnit]) errors.push(`Etapa ${i + 1}: prazo máximo de 50 anos.`);
     if (!Number.isFinite(s.rate) || s.rate < 0) errors.push(`Etapa ${i + 1}: taxa deve ser um número não negativo.`);
   }

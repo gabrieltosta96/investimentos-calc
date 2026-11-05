@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState } from "react";
 import { LineChart } from "../../components/LineChart";
-import { addTerm, businessDaysBetween, calendarDaysBetween, parseISO } from "./lib/calendar.js";
-import { MAX_TERM, compare, timeline } from "./lib/comparison.js";
+import { addMonths, businessDaysBetween, calendarDaysBetween, parseISO } from "./lib/calendar.js";
+import { compare, timeline } from "./lib/comparison.js";
 import { INDEXERS, annualize } from "./lib/financial-math.js";
 import { brl, date as fmtDate, dateTime, number, pct, signedBrl, signedPct } from "./lib/formatters.js";
 import { SERIES, SOURCE, fetchRates } from "./lib/rates-api.js";
-import { MAX_STAGES, defaultStage, defaultState, sanitizeState, toModel } from "./lib/state.js";
+import { MAX_STAGES, defaultStage, defaultState, isMonth, monthOf, sanitizeState, stageDates, toModel } from "./lib/state.js";
 import * as storage from "./lib/storage.js";
 import { IR_BRACKETS, PRODUCTS, TAX_RULES_VERIFIED_AT } from "./lib/tax-rules.js";
 
@@ -65,7 +65,7 @@ function setPath(obj: any, path: string, value: unknown) {
 const RATE_LABEL: Record<string, string> = {
   CDI: "Percentual do CDI (%)",
   SELIC: "Percentual da Selic (%)",
-  PRE: "Taxa prefixada (% a.a.)",
+  PRE: "Rentabilidade total no período (%)",
   IPCA: "Taxa acima do IPCA (% a.a.)",
 };
 function rateText(indexer: string, rate: number) {
@@ -75,27 +75,19 @@ function rateText(indexer: string, rate: number) {
   if (indexer === "PRE") return `${pct(rate)} a.a. (pré)`;
   return `IPCA + ${pct(rate)} a.a.`;
 }
-const UNIT_TEXT: Record<string, string> = { days: "dia(s)", months: "mês(es)", years: "ano(s)" };
-const termText = (s: Stage) => `${s.termValue} ${UNIT_TEXT[s.termUnit]}`;
+const stageRateText = (s: Stage) => (s.indexer === "PRE" ? `${pct(s.rate / 100)} no período (pré)` : rateText(s.indexer, s.rate / 100));
+const termText = (s: Stage) => `até ${s.endMonth.split("-").reverse().join("/")}`;
 const productLabel = (a: AppResult) => (a.isFill ? "CDB (reinvest.)" : PRODUCTS[a.product as keyof typeof PRODUCTS].label);
 const taxLine = (a: AppResult) => (a.exempt ? "Isento" : pct(a.irRate, 1));
 const tone = (v: number) => (v > 0 ? "pos" : v < 0 ? "neg" : "");
 
+const nextEndMonth = (last: string) => (isMonth(last) ? [monthOf(addMonths(`${last}-01`, 12))] : []);
+
 // Períodos de cada etapa, encadeados a partir da data de aplicação.
 function maturities(state: State) {
-  let cursor: string | null = state.startDate;
-  return state.stages.map((s) => {
-    const valid =
-      cursor && parseISO(cursor) && Number.isInteger(s.termValue) && s.termValue > 0 && s.termValue <= MAX_TERM[s.termUnit as keyof typeof MAX_TERM];
-    if (!valid) {
-      cursor = null;
-      return null;
-    }
-    const start: string = cursor!;
-    const end: string = addTerm(start, s.termValue, s.termUnit);
-    cursor = end;
-    return { start, end, calendar: calendarDaysBetween(start, end), business: businessDaysBetween(start, end) };
-  });
+  return stageDates(state.startDate, state.stages).map((d: { start: string; end: string } | null) =>
+    d?.end ? { start: d.start, end: d.end, calendar: calendarDaysBetween(d.start, d.end), business: businessDaysBetween(d.start, d.end) } : null,
+  );
 }
 
 function verdictText(state: State, r: AppResult) {
@@ -135,7 +127,7 @@ function summaryText(state: State, r: AppResult) {
     `${state.name}${state.institution ? ` (${state.institution})` : ""}`,
     `Aplicação: ${brl(state.amount)} em ${fmtDate(state.startDate)}`,
     ...state.stages.map(
-      (s, i) => `Etapa ${i + 1}: ${PRODUCTS[s.product as keyof typeof PRODUCTS].label} ${rateText(s.indexer, s.rate / 100)} por ${termText(s)}`,
+      (s, i) => `Etapa ${i + 1}: ${PRODUCTS[s.product as keyof typeof PRODUCTS].label} ${stageRateText(s)} ${termText(s)}`,
     ),
     `Premissas: CDI ${number(p.cdi, 2)}% a.a.${Number.isFinite(p.selic) ? `, Selic ${number(p.selic, 2)}% a.a.` : ""}, constantes (projeção, não garantia).`,
     "",
@@ -756,17 +748,10 @@ export const Investimentos = () => {
                         {RATE_LABEL[s.indexer]}
                         <input {...num(path("rate"))} min="0" step="0.01" inputMode="decimal" />
                       </label>
-                      <div className="field">
-                        Prazo
-                        <div className="inline">
-                          <input {...num(path("termValue"))} min="1" step="1" inputMode="numeric" aria-label={`Prazo da etapa ${i + 1}`} />
-                          <select {...text(path("termUnit"))} aria-label={`Unidade do prazo da etapa ${i + 1}`}>
-                            <option value="days">dias</option>
-                            <option value="months">meses</option>
-                            <option value="years">anos</option>
-                          </select>
-                        </div>
-                      </div>
+                      <label className="field">
+                        Data final (mês/ano)
+                        <input type="month" {...text(path("endMonth"))} required />
+                      </label>
                       <label className="field">
                         Tributação (IR)
                         <select {...text(path("taxMode"))}>
@@ -790,7 +775,7 @@ export const Investimentos = () => {
                           · {end.calendar} dias corridos · {end.business} dias úteis
                         </>
                       ) : (
-                        "Vencimento: informe data e prazo válidos."
+                        "Vencimento: data final deve ser posterior ao início da etapa."
                       )}
                     </p>
                     {!product.supported && (
@@ -805,7 +790,7 @@ export const Investimentos = () => {
                 type="button"
                 className="btn btn-small"
                 disabled={state.stages.length >= MAX_STAGES}
-                onClick={() => setState((st) => ({ ...st, stages: [...st.stages, defaultStage()] }))}
+                onClick={() => setState((st) => ({ ...st, stages: [...st.stages, defaultStage(...nextEndMonth(st.stages[st.stages.length - 1].endMonth))] }))}
               >
                 + Adicionar etapa
               </button>

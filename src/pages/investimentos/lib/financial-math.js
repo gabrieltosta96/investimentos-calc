@@ -14,7 +14,7 @@ import { PRODUCTS, computeRedemptionTaxes, isIrExempt } from './tax-rules.js';
 export const INDEXERS = {
   CDI: { label: '% do CDI', rateKind: 'percentOfIndex' },
   SELIC: { label: '% da Selic', rateKind: 'percentOfIndex' },
-  PRE: { label: 'Prefixado', rateKind: 'annual' },
+  PRE: { label: 'Prefixado (% total no período)', rateKind: 'annual' },
   IPCA: { label: 'IPCA + taxa', rateKind: 'annual' },
 };
 
