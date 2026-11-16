@@ -1,16 +1,19 @@
 import "normalize.css";
 import "./styles.css";
 
-import { useEffect, useState } from "react";
+import { Suspense, lazy, useEffect, useState } from "react";
 import { Investimentos } from "./pages/investimentos/Investimentos";
 import { Vending } from "./pages/vending/Vending";
 import { Vantagem } from "./pages/vantagem/Vantagem";
+// three.js is big: load the table tennis page only when opened.
+const Mesa = lazy(() => import("./pages/mesa/Mesa").then((m) => ({ default: m.Mesa })));
 
 // New utility = new entry here.
 const pages = [
   { path: "vending", title: "Calculadora Vending Machine", Component: Vending },
   { path: "vantagem", title: "Qual vale mais a pena?", Component: Vantagem },
   { path: "investimentos", title: "Calculadora de Renda Fixa", Component: Investimentos },
+  { path: "mesa", title: "Tênis de mesa: efeito", Component: Mesa },
 ];
 
 // Share links from the old standalone investimentos site ("#s=...").
@@ -45,7 +48,9 @@ export const App = () => {
         </nav>
       </header>
       {page ? (
-        <page.Component key={page.path} />
+        <Suspense fallback={<main className="layout">Carregando…</main>}>
+          <page.Component key={page.path} />
+        </Suspense>
       ) : (
         <main className="layout">
           <h1>Utilidades</h1>

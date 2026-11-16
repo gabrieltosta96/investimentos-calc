@@ -245,3 +245,40 @@ a.kpi { text-decoration: none; color: inherit; }
   font: inherit; font-size: 1.25rem; color: var(--text); width: 100%; min-height: 52px; padding: 8px 12px;
   border: 1px solid #c9cec6; border-radius: 10px; background: var(--surface);
 }
+
+/* Tênis de mesa: scene sticks beside controls; on phones it goes first, shorter, and panels become tabs. */
+.mesa-scene { position: sticky; top: 8px; }
+.mesa-canvas { height: min(70vh, 640px); min-height: 320px; touch-action: none; }
+.mesa-bar { padding: 10px; align-items: center; }
+.mesa-slow { display: flex; gap: 6px; align-items: center; }
+.mesa-status { position: absolute; left: 8px; top: 8px; right: 8px; display: flex; flex-direction: column; align-items: flex-start; gap: 4px; pointer-events: none; }
+.mesa-status .badge { font-size: .8rem; padding: 3px 10px; }
+.mesa-tabs { display: none; }
+.mesa-legend { position: absolute; right: 8px; bottom: 8px; margin: 0; padding: 6px 8px; list-style: none; font-size: .72rem; line-height: 1.5; background: rgb(255 255 255 / 85%); border-radius: 8px; pointer-events: none; }
+.mesa-keys { left: 8px; right: auto; }
+.mesa-keys kbd { font: inherit; font-size: .68rem; padding: 0 4px; border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 4px; background: #fff; }
+/* Mouse shortcuts on desktop, finger gestures on touch screens. */
+.mesa-touch { display: none; }
+@media (hover: none) { .mesa-mouse { display: none; } .mesa-touch { display: block; } }
+@media (max-width: 960px) { .mesa-mouse { display: none; } }
+.mesa-stepper { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.col-form .mesa-stepper input[type="range"] { flex: 1 1 auto; width: auto; min-width: 0; }
+.mesa-stepper .btn { min-width: 40px; min-height: 36px; font-size: 1.1rem; line-height: 1; flex: 0 0 auto; }
+.mesa-legend i { display: inline-block; width: 14px; height: 4px; margin-right: 5px; vertical-align: middle; border-radius: 2px; }
+.col-form input[type="range"] { width: 100%; min-height: 32px; accent-color: var(--brand); }
+@media (max-width: 960px) {
+  .mesa-scene { order: -1; top: 0; z-index: 1; margin: 0 -16px; }
+  .mesa-scene .card { border-radius: 0; border-left: 0; border-right: 0; }
+  .mesa-scene > p { display: none; }
+  .mesa-canvas { height: 40vh; min-height: 240px; }
+  .mesa-bar { flex-wrap: nowrap; overflow-x: auto; padding: 6px 8px; }
+  .mesa-bar .btn { flex: 0 0 auto; white-space: nowrap; }
+  .mesa-tabs { display: flex; flex-wrap: nowrap; }
+  .mesa-tabs .btn { flex: 1 1 0; }
+  .mesa-pane-hidden { display: none; }
+}
+@media (max-width: 600px) {
+  /* Top nav: one scrollable row instead of four wrapped ones. */
+  .topbar .actions { flex-wrap: nowrap; overflow-x: auto; }
+  .topbar .actions .btn { flex: 0 0 auto; white-space: nowrap; }
+}

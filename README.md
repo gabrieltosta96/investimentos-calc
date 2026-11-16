@@ -3,6 +3,7 @@
 Páginas de utilidade num só lugar. React 19 + Vite + TypeScript.
 
 - **Calculadora Vending Machine** (`#/vending`): lucro mensal, margem, ponto de equilíbrio (pacotes/mês e /dia).
+- **Tênis de mesa: efeito** (`#/mesa`): simulador 3D de saque com efeito e devolução; mostra para onde a bola sai da raquete e o ângulo que funciona. Física em `src/pages/mesa/physics.ts`.
 - **Calculadora de Renda Fixa** (`#/investimentos`): compara CDB, RDB, LCI e LCA com 100% do CDI pelo valor líquido (IR, IOF, reinvestimentos). Regras, fórmulas e fontes em `src/pages/investimentos/lib/` (JS puro, testado).
 
 ```bash
