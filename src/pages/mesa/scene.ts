@@ -56,7 +56,10 @@ export const createScene = (container: HTMLElement) => {
 
   const camera = new THREE.PerspectiveCamera(45, 1, 0.01, 50);
   const controls = new OrbitControls(camera, renderer.domElement);
-  controls.enableZoom = false; // mouse wheel adjusts the racket; zoom is Ctrl+wheel (see zoom()) or pinch
+  // Mouse wheel adjusts the racket (zoom is Ctrl+wheel, see zoom()), but enableZoom also gates pinch:
+  // turn it on only for touch. The first finger's pointerdown flips it before the pinch starts.
+  controls.enableZoom = false;
+  renderer.domElement.addEventListener("pointerdown", (e) => (controls.enableZoom = e.pointerType === "touch"));
   controls.touches.TWO = THREE.TOUCH.DOLLY_PAN;
   controls.mouseButtons.MIDDLE = null; // middle drag adjusts the racket (Mesa.tsx)
 
